@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Vast 2017 MINI CHALLENGE 1</title>
+    <link rel="stylesheet" href="dc.css">
+  </head>
+  <body>
+    <h1>VAST 2017 MiniChallenge</h1>
+
+
+    <div id="carType">
+      <strong>Car Type</strong>
+      <span class="reset" style="display:none;">Selected: <span class="filter"></span></span>
+      <a href="javascript:carTypeChart.filterAll();dc.redrawAll();" style="display:none;" class="reset">reset</a>
+      <div class="clearfix"></div>
+    </div>
+    <div id="gateName">
+      <strong>Gate Name</strong>
+      <span class="reset" style="display:none;">Selected: <span class="filter"></span></span>
+      <a href="javascript:gateNameChart.filterAll();dc.redrawAll();" style="display:none;" class="reset">reset</a>
+      <div class="clearfix"></div>
+    </div>
+
+
+    <div class="row">
+      <div>
+        <div class="dc-data-count">
+            <span class="filter-count"></span> selected out of <span class="total-count"></span> records | <a
+                href="javascript:dc.filterAll(); dc.renderAll();">Reset All</a>
+        </div>
+      </div>
+      <table class="table table-hover dc-data-table">
+      </table>
+    </div>
+
+    <div class="clearfix"></div>
+
+
+
+    <script src="crossfilter.js" charset="utf-8"></script>
+    <script src="d3.js" charset="utf-8"></script>
+    <script src="dc.js" charset="utf-8"></script>
+    <script type="text/javascript">
+      var url = "Lekagul_slice.csv";
+      var carTypeChart = dc.rowChart("#carType");
+      var gateNameChart = dc.rowChart("#gateName");
+      var visCount = dc.dataCount(".dc-data-count");
+      var visTable = dc.dataTable(".dc-data-table");
+
+      d3.csv(url, function (err,data) {
+        if(err) throw err;
+        // Slice of data.
+        // Timestamp,car-id,car-type,gate-name
+        // 2016-05-02 18:05:34,20161602051605-625,2P,camping7
+        data.forEach(function (d) {
+          d.Timestamp = new Date(d.Timestamp);
+        })
+        var ndx = crossfilter(data);
+        var all = ndx.groupAll();
+        var carTypeDim = ndx.dimension( (d) =>  d["car-type"]);
+        var gateNameDim = ndx.dimension( (d) =>  d["gate-name"]);
+        var dateDim = ndx.dimension((d) => d.Timestamp);
+        var carTypeGroup = carTypeDim.group();
+        var gateNameGroup = gateNameDim.group();
+        var dateGroup = dateDim.group();
+
+        carTypeChart
+          .dimension(carTypeDim)
+          .group(carTypeGroup)
+          //if we dont want x axis fixed
+          .elasticX(true);
+        gateNameChart
+        //option A to make legibility the chart because of the large amount of groups
+        //  .height(800)
+          .dimension(gateNameDim)
+          .group(gateNameGroup)
+        //option B, just show the top ten
+          .data(function (group) {
+            return group.top(10)
+          });
+        visCount
+          .dimension(ndx)
+          .group(all);
+        visTable
+          .dimension(dateDim)
+          .group(function (d) {
+            var format = d3.format('02d');
+            return d.Timestamp.getFullYear()+'/'+format((d.Timestamp.getMonth()+1));
+          })
+          .columns([
+            "Timestamp",
+            "car-id",
+            "car-type",
+            "gate-name"
+          ]);
+
+
+        dc.renderAll();
+
+      })
+    </script>
+  </body>
+</html>
