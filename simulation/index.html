@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Force Tutorial</title>
+  </head>
+  <body>
+    <h1>Force Tutorial</h1>
+    <canvas id="network" width="500" height="500"></canvas>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script type="text/javascript">
+      var graph = {
+        nodes: [
+          {
+            name: "john",
+            age: 36
+          },
+          {
+            name: "alejo",
+            age: 23
+          },
+          {
+            name: "juan",
+            age: 20
+          },
+          {
+            name: "stephany",
+            age: 23
+          },
+          {
+            name: "carlos",
+            age: 50
+          },
+          {
+            name: "arnulfo",
+            age: 96
+          }
+        ]
+      }
+      var canvas = d3.select("#network"),
+      //returns the html or dom element
+          ctx = canvas.node().getContext("2d"),
+          width = canvas.attr("width"),
+          height = canvas.attr("height");
+    </script>
+  </body>
+</html>
