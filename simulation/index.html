@@ -8,43 +8,10 @@
     <h1>Force Tutorial</h1>
     <canvas id="network" width="500" height="500"></canvas>
     <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="netClustering.js"></script>
+    <script src="forceInABox.js"></script>
+    <script src="NodeNavigator.js"></script>
     <script type="text/javascript">
-      var graph2 = {
-        nodes: [
-          {
-            name: "john",
-            age: 36
-          },
-          {
-            name: "alejo",
-            age: 23
-          },
-          {
-            name: "juan",
-            age: 20
-          },
-          {
-            name: "stephany",
-            age: 23
-          },
-          {
-            name: "carlos",
-            age: 50
-          },
-          {
-            name: "arnulfo",
-            age: 96
-          }
-        ],
-        links: [
-          {source: "john", target: "alejo"},
-          {source: "john", target: "juan"},
-          {source: "arnulfo", target: "carlos"},
-          {source: "stephany", target: "juan"},
-          {source: "alejo", target: "juan"},
-          {source: "arnulfo", target: "john"}
-        ]
-      }
       var canvas = d3.select("#network"),
       //returns the html or dom element
       ctx = canvas.node().getContext("2d"),
@@ -54,9 +21,10 @@
       color = d3.scaleOrdinal(d3.schemeCategory20),
       x = d3.scaleOrdinal() .range([20,width-20]),
       simulation = d3.forceSimulation()
-                     .force("x",d3.forceX(d=>x(d.party)).strength(0.7))
-                     .force("y",d3.forceY(height/2))
-                     .force("collide", d3.forceCollide(r+1))
+                    //  .force("x",d3.forceX(d=>x(d.party)).strength(0.7))
+                    //  .force("y",d3.forceY(height/2))
+                    //  .force("collide", d3.forceCollide(r+1))
+                     .force("center", d3.forceCenter(width/2,height/2))
                      .force("charge", d3.forceManyBody()
                                         .strength(-20))
                     //avoid setting x and y attribute to source and target of the links
@@ -65,39 +33,95 @@
                                         return d.name;
                                       }));
       d3.json("VotacionesSenado2017.json", function (err,graph) {
-        if (err) throw err;
-        simulation
-                  .nodes(graph.nodes)
-                  .on("tick", update)
-                  .force("link")
-                    .links(graph.links);
-        canvas
-            .call(d3.drag()
-                .container(canvas.node() )
-                .subject(dragsubject)
-                .on("start", dragstarted)
-                .on("drag", dragged)
-                .on("end", dragended));
-        function update() {
-          //clear the whole canvas
-           ctx.clearRect(0,0, width, height);
-
-           ctx.beginPath();
-           ctx.globalAlpha = 0.1;
-           ctx.strokeStyle = "#aaa";
-           graph.links.forEach(drawLink);
-           ctx.stroke ();
-
-
-           ctx.globalAlpha = 1.0;
-           graph.nodes.forEach(drawNode);
-
+        var dicNodes = d3.map();
+        graph.nodes.forEach(function (n) {
+          n.degree = 0;
+          n.visible = true;
+          // n.cluster = -1;
+          n.id = +n.id;
+          dicNodes.set(n.id, n);
+        });
+        graph.links.forEach(function (e) {
+        // e.count = +e.count;
+        if (dicNodes.has(e.source.id)) {
+          e.source = dicNodes.get(e.source.id);
+        } else {
+          e.source = {
+            id:e.source,
+            name:e.source,
+            degree:0,
+            // cluster: -1,
+            screen_name:e.target,
+            count:1
+          };
+          dicNodes.set(e.source.id, e.source);
         }
-        function dragsubject() {
-           return simulation.find(d3.event.x, d3.event.y);
-         }
 
-      })
+        e.source.degree+=1;
+
+        if (dicNodes.has(e.target.id)) {
+          e.target = dicNodes.get(e.target.id);
+        } else {
+          e.target = {
+            id:e.target,
+            name:e.target,
+            degree:0,
+            // cluster: -1,
+            screen_name:e.target,
+            count:1
+          };
+          dicNodes.set(e.target.id, e.target);
+        }
+
+        e.target.degree+=1;
+      });
+      var minDegree = 2;
+      // var filteredLinks = graph.links.filter(function (e) {
+      //   return e.count_followers_in_query > minDegree;
+      // });
+      var filteredLinks = graph.links;
+      var filteredGraph = {
+        nodes: dicNodes.values(),
+        links: filteredLinks
+      };
+
+      if (err) throw err;
+
+      nodeNavigator.links(filteredGraph.links);
+      nodeNavigator.data(filteredGraph.nodes);
+      nodeNavigator.updateCallback(function (nodes) {
+        update({
+          nodes:nodes,
+          links:graph.links
+        });
+      });
+
+      update(filteredGraph);
+    });
+
+    var nodeNavigator = new NodeNavigator(
+      "#nn",
+      height
+    ).id("screen_name");
+
+      function update() {
+        //clear the whole canvas
+         ctx.clearRect(0,0, width, height);
+
+         ctx.beginPath();
+         ctx.globalAlpha = 0.1;
+         ctx.strokeStyle = "#aaa";
+         graph.links.forEach(drawLink);
+         ctx.stroke ();
+
+
+         ctx.globalAlpha = 1.0;
+         graph.nodes.forEach(drawNode);
+
+      }
+
+
+
 
 
 
@@ -112,25 +136,6 @@
         ctx.moveTo(d.source.x,d.source.y);
         ctx.lineTo(d.target.x,d.target.y);
       }
-      function dragstarted() {
-        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-        d3.event.subject.fx = d3.event.subject.x;
-        d3.event.subject.fy = d3.event.subject.y;
-        console.log(d3.event.subject);
-      }
-
-      function dragged() {
-        d3.event.subject.fx = d3.event.x;
-        d3.event.subject.fy = d3.event.y;
-      }
-
-      function dragended() {
-        if (!d3.event.active) simulation.alphaTarget(0);
-        d3.event.subject.fx = null;
-        d3.event.subject.fy = null;
-      }
-      //No more update manually
-      // update();
     </script>
   </body>
 </html>
