@@ -19,7 +19,7 @@
     <div id="nn"></div>
     <canvas id="graph" width="800" height="800"></canvas>
 
-    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="d3.v4.min.js"></script>
     <script src="netClustering.js"></script>
     <script src="forceInABox.js"></script>
     <script src="NodeNavigator.js"></script>
@@ -50,13 +50,14 @@
 
     d3.json("VotacionesSenado2017.json", function(error, graph) {
       var dicNodes = d3.map();
-      graph.nodes.forEach(function (n) {
+      graph.nodes.forEach(function (n, i) {
         n.degree = 0;
         n.visible = true;
         // n.cluster = -1;
         n.id = +n.id;
         dicNodes.set(n.id, n);
       });
+      console.log(dicNodes, "dicNodes");
 
 
       // graph.links = graph.links.filter(function (d) {
@@ -134,6 +135,8 @@
     // nodeNavigator.addSequentialAttrib("listed_count");
     // nodeNavigator.addSequentialAttrib("statuses_count");
     // nodeNavigator.addCategoricalAttrib("utc_offset");
+    nodeNavigator.addSequentialAttrib("id")
+    nodeNavigator.addCategoricalAttrib("name");
     nodeNavigator.addCategoricalAttrib("party");
 
     nodeNavigator.addCategoricalAttrib("cluster", color);
@@ -196,6 +199,11 @@
       d3.select("#recluster")
         .on("click", function () {
           console.log("Clustering");
+          console.log(visibleLinks);
+          var noUndefLinks = visibleLinks.map(d=> {
+            if(d.source && d.target)
+              return d;
+          });
           netClustering.cluster(nodeNavigator.getVisible(), visibleLinks);
           console.log("done");
           update(graph);
@@ -226,7 +234,7 @@
         clusters.forEach(function(cluster) {
           context.beginPath();
           context.globalAlpha = 1;
-
+          console.log("forEach cluster");
           cluster.values.forEach(drawNode);
           context.fillStyle = color(cluster.key);
           context.fill();
@@ -258,9 +266,9 @@
       selected = d;
       context.beginPath();
       context.fillStyle = "black";
+      console.log(selected, "selected");
       drawNodeText(selected);
       context.fill();
-      console.log(d);
     }
 
     function dragstarted() {
@@ -292,11 +300,15 @@
 
 
     function drawNode(d) {
-      context.moveTo(d.x + d.r/2, d.y + d.r/2);
-      context.arc(d.x, d.y, d.r, 0, 2 * Math.PI);
+      // console.log(d, "d of drawNode");
+      if (d){
+        context.moveTo(d.x + d.r/2, d.y + d.r/2);
+        context.arc(d.x, d.y, d.r, 0, 2 * Math.PI);
+      }
     }
 
     function drawNodeText(d) {
+      console.log(d, "d");
       context.moveTo(d.x + d.r/2, d.y + d.r/2 + 5);
       context.fillText(d.screen_name, d.x, d.y);
     }
