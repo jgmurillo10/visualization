@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>ForceTutorial</title>
+  <style media="screen">
+    canvas {
+      border: 1px solid lightgrey;
+    }
+  </style>
+</head>
+<body>
+  <h1>Force Tutorial</h1>
+  <canvas id="network" width="500" height="500"></canvas>
+
+  <script src="d3.v4.min.js" charset="utf-8"></script>
+  <script type="text/javascript">
+
+    var canvas = d3.select("#network"),
+    ctx = canvas.node().getContext("2d"),
+    r=3 ,
+    width = canvas.attr("width"),
+    color = d3.scaleOrdinal(d3.schemeCategory20),
+    height = canvas.attr("height"),
+    simulation = d3.forceSimulation()
+      .force("x", d3.forceX(width/2))
+      .force("y", d3.forceY(height/2))
+      .force("collide", d3.forceCollide(r))
+      .force("charge", d3.forceManyBody().strength(-20))
+      // .on("tick", update) para que funcione el update con la nueva manera de leer el json
+      .force("link", d3.forceLink()
+        .id(function (d) {
+          return d.name;
+        }));
+    d3.json("VotacionesSenado2017.json", onLoadJSON);
+    function onLoadJSON( err,graph) {
+      if(err) throw err;
+      simulation.nodes(graph.nodes);
+      simulation.force("link").links(graph.links);
+      simulation.on("tick", update);
+      canvas
+      .call(d3.drag()
+          .container(canvas.node())
+          .subject(dragsubject)
+          .on("start", dragstarted)
+          .on("drag", dragged)
+          .on("end", dragended));
+      function update() {
+        ctx.clearRect(0,0,width,height);
+        ctx.beginPath();
+        ctx.globalAlpha = 0.05;
+        ctx.strokeStyle = "#aaa";
+        graph.links.forEach(drawLink);
+        ctx.stroke();
+        graph.nodes.forEach(drawNode);
+      }
+      function dragsubject() {
+         return simulation.find(d3.event.x, d3.event.y);
+       }
+    }
+    function drawNode(d) {
+      ctx.beginPath();
+      ctx.globalAlpha = 0.61;
+      ctx.fillStyle = color(d.party);
+      ctx.moveTo(d.x, d.y);
+      ctx.arc(d.x, d.y,r,0, 2*Math.PI);
+      ctx.fill();
+    }
+    function drawLink(l) {
+      ctx.moveTo(l.source.x, l.source.y);
+      ctx.lineTo(l.target.x, l.target.y);
+    }
+    function dragstarted() {
+      if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+      d3.event.subject.fx = d3.event.subject.x;
+      d3.event.subject.fy = d3.event.subject.y;
+    }
+
+    function dragged() {
+      d3.event.subject.fx = d3.event.x;
+      d3.event.subject.fy = d3.event.y;
+    }
+
+    function dragended() {
+      if (!d3.event.active) simulation.alphaTarget(0);
+      d3.event.subject.fx = null;
+      d3.event.subject.fy = null;
+    }
+  </script>
+</body>
+</html>
