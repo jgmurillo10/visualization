@@ -163,6 +163,10 @@ var nodeNavigator = new NodeNavigator(
   "#nn",
   height
 ).id("name");
+/*here is where you set the columns that the widget will display. you can add categorical or sequential attribute. Both receive as a parameter the name and an optional scale.
+the default scale for categorical attributes is d3.scaleOrdinal(d3.schemeCategory20)
+and the default scale for sequential attributes is d3.scaleLinear()
+*/
 nodeNavigator.addSequentialAttrib("degree");
 nodeNavigator.addCategoricalAttrib("party");
 nodeNavigator.addCategoricalAttrib("cluster", color);
