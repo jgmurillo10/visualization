@@ -47,7 +47,7 @@
 </html>
 
 ```
-2. Create and import a new JavaScript file imported after the scripts above or right in the html like in the example.
+2. Create and import a new JavaScript file below the scripts above (d3, netClustering, forceInABox and NodeNavigator) or right in the html like in the example below.
 ```html
 <script src="path/to/d3.v4.min.js"></script>
 <script src="path/to/netClustering.js"></script>
@@ -60,7 +60,7 @@
   })();
 </script>
 ```
-3. Add the following code to your JavaScript file.
+3. Add the following JavaScript code.
 
 ```javascript
 (function () {
